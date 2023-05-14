@@ -4,9 +4,13 @@ class Model:
     def __init__(self, state):
         self.game_name = state.get_name()
         self.device = 'cpu'
+        self.is_training = False
 
     def get_device(self):
         return self.device
+
+    def set_training(self, b):
+        self.is_training = b
 
     def get_model_structure(self):
         raise NotImplementedError()

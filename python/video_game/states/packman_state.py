@@ -209,7 +209,7 @@ class PackManState:
         elif self.get_last_score() > 0:
             return 1
         else:
-            return 0
+            return -1 / self.max_age
 
     def get_state_numpy_shape(self):
         return 1, HISTORY_LENGTH+1, self.height, self.width

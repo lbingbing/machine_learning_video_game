@@ -74,6 +74,6 @@ def check_and_update_train_configs(model_path, configs):
         print('new train configs:')
         print_train_configs(configs)
         os.rename(model_path+train_configs_update_file_suffix, model_path+train_configs_updated_file_suffix)
-        return False
+        return True
     else:
         return False

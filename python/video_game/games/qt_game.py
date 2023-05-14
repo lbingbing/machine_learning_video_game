@@ -13,7 +13,6 @@ class GameWidget(QtWidgets.QWidget):
 
         self.init_state()
         self.init_player(player_type)
-        self.is_human_player = player.is_human(self.player)
 
         self.init_gui_parameters()
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -35,6 +34,9 @@ class GameWidget(QtWidgets.QWidget):
 
     def create_player(self, state, player_type):
         raise NotImplementedError()
+
+    def is_human_player(self):
+        return player.is_human(self.player)
 
     def init_gui_parameters(self):
         raise NotImplementedError()
@@ -100,7 +102,7 @@ class GameWidget(QtWidgets.QWidget):
         self.update()
 
     def start(self):
-        if self.is_human_player:
+        if self.is_human_player():
             self.schedule_state_update()
         else:
             self.computer_step()
@@ -136,7 +138,7 @@ class GameWidget(QtWidgets.QWidget):
             self.game_num += 1
             print('game {} score: {} age: {}'.format(self.game_num, self.state.get_score(), self.state.get_age()))
         else:
-            if self.is_human_player:
+            if self.is_human_player():
                 self.schedule_state_update()
             else:
                 self.computer_step()
@@ -171,7 +173,7 @@ class GameWidget(QtWidgets.QWidget):
             if event.key() == QtCore.Qt.Key_Return:
                 self.reset()
                 self.start()
-        if self.is_human_player:
+        if self.is_human_player():
            self.handle_human_player_events(event)
         return super().eventFilter(obj, event)
 

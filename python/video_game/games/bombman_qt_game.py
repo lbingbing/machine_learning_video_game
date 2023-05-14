@@ -15,7 +15,10 @@ class BombManGameWidget(qt_game.GameWidget):
         self.unit_size = 30
 
     def init_state_update_interval(self):
-        self.state_update_interval = 0.3
+        if self.is_human_player():
+            self.state_update_interval = 0.3
+        else:
+            self.state_update_interval = 0.1
 
     def handle_human_player_events(self, event):
         if event.type() == QtCore.QEvent.KeyPress:

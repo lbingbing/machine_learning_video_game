@@ -9,7 +9,7 @@ class PVTableModel(table_model.TableModel, pv_model.PVModel):
         return pv_table.PVTable(state)
 
     def get_softmax_temperature(self):
-        raise NotImplementedError()
+        return 3 if self.is_training else 1
 
     def train(self, batch, learning_rate, vloss_factor):
         vlosses = []

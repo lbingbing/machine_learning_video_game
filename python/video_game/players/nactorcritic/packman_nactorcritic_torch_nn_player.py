@@ -42,9 +42,6 @@ class PackManNActorCriticTorchNNModel(nactorcritic_torch_nn_model.NActorCriticTo
     def create_network(self, state):
         return Network(state)
 
-    def get_softmax_temperature(self):
-        return 3
-
 class PackManNActorCriticTorchNNPlayer(model_player.ModelPlayer):
     def create_model(self, state):
         return PackManNActorCriticTorchNNModel(state)

@@ -18,7 +18,7 @@ class VTorchNNModel(torch_nn_model.TorchNNModel, v_model.VModel):
         V_t = self.network(state_t)
         loss_fn = torch.nn.MSELoss()
         loss = loss_fn(V_t, target_V_t)
-        optimizer = torch.optim.SGD(self.network.parameters(), learning_rate)
+        optimizer = torch.optim.Adam(self.network.parameters(), learning_rate, weight_decay=1e-4)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

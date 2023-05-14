@@ -115,13 +115,16 @@ class GridWalkState:
             else:
                 return -1
         else:
-            return 0
+            return -1 / self.max_age
 
     def get_state_dim(self):
         return (self.height * self.width) ** 2
 
+    def get_state_index(self, walker_position, target_position):
+        return walker_position[0] + self.height * (walker_position[1] + self.width * (target_position[0] + self.height * target_position[1]))
+
     def to_state_index(self):
-        return self.walker_position[0] + self.height * (self.walker_position[1] + self.width * (self.target_position[0] + self.height * self.target_position[1]))
+        return self.get_state_index(self.walker_position, self.target_position)
 
     def get_state_numpy_shape(self):
         return 1, 1, self.height, self.width
@@ -157,10 +160,51 @@ class GridWalkState:
         return 4
 
     def get_equivalent_state_indexes(self, state_index):
-        return [state_index] * self.get_equivalent_num()
+        state_index1 = state_index
+        walker_position_y = state_index1 % self.height
+        state_index1 //= self.height
+        walker_position_x = state_index1 % self.width
+        state_index1 //= self.width
+        target_position_y = state_index1 % self.height
+        state_index1 //= self.height
+        target_position_x = state_index1 % self.width
+        walker_position = [walker_position_y, walker_position_x]
+        target_position = [target_position_y, target_position_x]
+        walker_position_flip_y = [self.height - 1 - walker_position_y, walker_position_x]
+        target_position_flip_y = [self.height - 1 - target_position_y, target_position_x]
+        walker_position_flip_x = [walker_position_y, self.width - 1 - walker_position_x]
+        target_position_flip_x = [target_position_y, self.width - 1 - target_position_x]
+        walker_position_flip_yx = [self.height - 1 - walker_position_y, self.width - 1 - walker_position_x]
+        target_position_flip_yx = [self.height - 1 - target_position_y, self.width - 1 - target_position_x]
+        return [
+            state_index,
+            self.get_state_index(walker_position_flip_y, target_position_flip_y),
+            self.get_state_index(walker_position_flip_x, target_position_flip_x),
+            self.get_state_index(walker_position_flip_yx, target_position_flip_yx),
+            ]
 
     def get_equivalent_action_indexes(self, action_index):
-        return [action_index] * self.get_equivalent_num()
+        action_index_flip_y = action_index
+        action_index_flip_x = action_index
+        action_index_flip_yx = action_index
+        if action_index == UP:
+            action_index_flip_y = DOWN
+            action_index_flip_yx = DOWN
+        elif action_index == DOWN:
+            action_index_flip_y = UP
+            action_index_flip_yx = UP
+        elif action_index == LEFT:
+            action_index_flip_x = RIGHT
+            action_index_flip_yx = RIGHT
+        elif action_index == RIGHT:
+            action_index_flip_x = LEFT
+            action_index_flip_yx = LEFT
+        return [
+            action_index,
+            action_index_flip_y,
+            action_index_flip_x,
+            action_index_flip_yx,
+            ]
 
     def get_equivalent_state_numpy(self, state_numpy):
         state_numpy_flip_y = np.flip(state_numpy, axis=2)

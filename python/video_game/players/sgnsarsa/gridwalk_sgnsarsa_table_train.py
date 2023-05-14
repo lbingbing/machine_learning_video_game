@@ -15,7 +15,7 @@ configs = {
     'replay_memory_size': 4096,
     'batch_num_per_iteration': 2,
     'batch_size': 32,
-    'learning_rate': 0.01,
+    'dynamic_learning_rate': [0.001, 0.001, 1000000],
     }
 
 sgnsarsa_model_train.main(state, model, configs)

@@ -42,9 +42,6 @@ class TetrisNActorCriticTorchNNModel(nactorcritic_torch_nn_model.NActorCriticTor
     def create_network(self, state):
         return Network(state)
 
-    def get_softmax_temperature(self):
-        return 3
-
 class TetrisNActorCriticTorchNNPlayer(model_player.ModelPlayer):
     def create_model(self, state):
         return TetrisNActorCriticTorchNNModel(state)

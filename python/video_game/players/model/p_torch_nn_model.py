@@ -6,7 +6,7 @@ from . import p_model
 
 class PTorchNNModel(torch_nn_model.TorchNNModel, p_model.PModel):
     def get_softmax_temperature(self):
-        raise NotImplementedError()
+        return 3 if self.is_training else 1
 
     def train(self, batch, learning_rate):
         states = []
@@ -25,7 +25,7 @@ class PTorchNNModel(torch_nn_model.TorchNNModel, p_model.PModel):
         P_logits_t = self.network(state_t)
         P_t = torch.nn.Softmax(dim=1)(P_logits_t / self.get_softmax_temperature())
         loss = torch.mean(torch.sum(-factor_t * (action_t * torch.pow(1 - P_t, 2) * torch.log(P_t + 1e-6) + (1 - action_t) * torch.pow(P_t, 2) * torch.log(1 - P_t + 1e-6)), dim=1))
-        optimizer = torch.optim.SGD(self.network.parameters(), learning_rate)
+        optimizer = torch.optim.Adam(self.network.parameters(), learning_rate, weight_decay=1e-4)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

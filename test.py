@@ -11,7 +11,7 @@ def run(cmd, timeout=None):
     res = subprocess.run(cmd, timeout=timeout)
     return res.returncode == 0
 
-assert run(['python', '-m', 'video_game.players.model.create_train_flag_file', 'train_stop'])
+assert run(['python', '-m', 'video_game.players.utils.create_train_flag_file', 'train_stop'])
 
 def test_gridwalk_game_regression():
     assert run(['python', '-m', 'video_game.games.gridwalk_game_regression', 'random', '100'])

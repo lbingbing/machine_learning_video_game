@@ -13,7 +13,7 @@ configs = {
     'replay_memory_size': 4096,
     'batch_num_per_iteration': 2,
     'batch_size': 32,
-    'learning_rate': 0.0001,
+    'dynamic_learning_rate': [0.001, 0.001, 100000],
    }
 
 mcpgc_model_train.main(state, model, configs)

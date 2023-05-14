@@ -30,9 +30,6 @@ class GridWalkMCPGCBTorchNNModel(mcpgcb_torch_nn_model.MCPGCBTorchNNModel):
     def create_network(self, state):
         return Network(state)
 
-    def get_softmax_temperature(self):
-        return 3
-
 class GridWalkMCPGCBTorchNNPlayer(model_player.ModelPlayer):
     def create_model(self, state):
         return GridWalkMCPGCBTorchNNModel(state)

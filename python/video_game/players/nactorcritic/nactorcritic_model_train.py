@@ -1,8 +1,9 @@
 import argparse
 import itertools
 
+from ..utils import train_utils
 from ..utils import replay_memory
-from ..model import train_flags
+from ..utils import train_flags
 
 def sample(state, model, rmemory, configs):
     episode_num_per_iteration = configs['episode_num_per_iteration']
@@ -46,10 +47,10 @@ def sample(state, model, rmemory, configs):
                     break
     return scores, ages
 
-def train(model, rmemory, configs):
+def train(model, rmemory, configs, iteration_id):
     batch_num_per_iteration = configs['batch_num_per_iteration']
     batch_size = configs['batch_size']
-    learning_rate = configs['learning_rate']
+    learning_rate = train_utils.get_dynamic_learning_rate(iteration_id, configs['dynamic_learning_rate'])
     vloss_factor = configs['vloss_factor']
 
     vlosses = []
@@ -65,8 +66,10 @@ def main(state, model, configs):
     parser = argparse.ArgumentParser('train {} nactorcritic model'.format(state.get_name()))
     args = parser.parse_args()
 
-    for k, v in configs.items():
-        print('{}: {}'.format(k, v))
+    if not train_flags.check_and_update_train_configs(model.get_model_path(), configs):
+        print('train configs:')
+        for k, v in configs.items():
+            print('{}: {}'.format(k, v))
 
     check_interval = configs['check_interval']
     save_model_interval = configs['save_model_interval']
@@ -77,6 +80,7 @@ def main(state, model, configs):
     else:
         print('model {} created'.format(model.get_model_path()))
     print('use {} device'.format(model.get_device()))
+    model.set_training(True)
 
     rmemory = replay_memory.ReplayMemory(configs['replay_memory_size'])
 
@@ -86,7 +90,7 @@ def main(state, model, configs):
     ages = []
     for iteration_id in itertools.count(1):
         scores1, ages1 = sample(state, model, rmemory, configs)
-        vlosses1, plosses1 = train(model, rmemory, configs)
+        vlosses1, plosses1 = train(model, rmemory, configs, iteration_id)
         vlosses += vlosses1
         plosses += plosses1
         scores += scores1
@@ -101,11 +105,11 @@ def main(state, model, configs):
             avg_ploss = sum(plosses) / len(plosses)
             avg_score = sum(scores) / len(scores)
             avg_age = sum(ages) / len(ages)
+            print('{} iteration: {} avg_vloss: {:.8f} avg_ploss: {:.8f} V: {:.8f} P_logit_range: [{:.4f}, {:.4f}] P_range: [{:.4f}, {:.4f}] avg_score: {:.2f} avg_age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_vloss, avg_ploss, V, *P_logit_range, *P_range, avg_score, avg_age))
             vlosses.clear()
             plosses.clear()
             scores.clear()
             ages.clear()
-            print('iteration: {} avg_vloss: {:.8f} avg_ploss: {:.8f} V: {:.8f} P_logit_range: [{:.4f}, {:.4f}] P_range: [{:.4f}, {:.4f}] avg_score: {:.2f} avg_age: {:.2f}'.format(iteration_id, avg_vloss, avg_ploss, V, *P_logit_range, *P_range, avg_score, avg_age))
             train_flags.check_and_update_train_configs(model.get_model_path(), configs)
         if iteration_id % save_model_interval == 0 or (need_check and train_flags.check_and_clear_save_model_flag_file(model.get_model_path())):
             model.save()

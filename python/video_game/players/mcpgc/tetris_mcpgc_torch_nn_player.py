@@ -39,9 +39,6 @@ class TetrisMCPGCTorchNNModel(mcpgc_torch_nn_model.MCPGCTorchNNModel):
     def create_network(self, state):
         return Network(state)
 
-    def get_softmax_temperature(self):
-        return 3
-
 class TetrisMCPGCTorchNNPlayer(model_player.ModelPlayer):
     def create_model(self, state):
         return TetrisMCPGCTorchNNModel(state)
