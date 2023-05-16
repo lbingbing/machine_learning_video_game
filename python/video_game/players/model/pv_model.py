@@ -8,6 +8,9 @@ class PVModel:
     def get_P_logit_range(self, state):
         raise NotImplementedError()
 
+    def get_legal_P(self, state):
+        raise NotImplementedError()
+
     def get_P_range(self, state):
         raise NotImplementedError()
 

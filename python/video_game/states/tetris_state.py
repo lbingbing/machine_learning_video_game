@@ -305,11 +305,11 @@ class TetrisState:
 
     def get_reward(self):
         if self.is_end():
-            return -10
+            return -2
         elif self.get_last_score() > 0:
             return self.get_last_score()
         else:
-            return -0.01
+            return -1 / (self.height * 10)
 
     def get_state_numpy_shape(self):
         return 1, 1, self.height, self.width

@@ -5,6 +5,9 @@ from . import torch_nn_model
 from . import q_model
 
 class QTorchNNModel(torch_nn_model.TorchNNModel, q_model.QModel):
+    def __init__(self, state):
+        torch_nn_model.TorchNNModel.__init__(self, state)
+
     def train(self, batch, learning_rate):
         states = []
         actions = []

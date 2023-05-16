@@ -1,8 +1,8 @@
 import os
 
 class Model:
-    def __init__(self, state):
-        self.game_name = state.get_name()
+    def __init__(self, game_name):
+        self.game_name = game_name
         self.device = 'cpu'
         self.is_training = False
 
@@ -23,6 +23,9 @@ class Model:
 
     def exists(self):
         return os.path.isfile(self.get_model_path())
+
+    def initialize(self):
+        raise NotImplementedError()
 
     def save(self):
         raise NotImplementedError()

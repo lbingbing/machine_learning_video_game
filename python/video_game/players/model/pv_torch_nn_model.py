@@ -5,8 +5,12 @@ from . import torch_nn_model
 from . import pv_model
 
 class PVTorchNNModel(torch_nn_model.TorchNNModel, pv_model.PVModel):
-    def get_softmax_temperature(self):
-        return 3 if self.is_training else 1
+    def __init__(self, state):
+        torch_nn_model.TorchNNModel.__init__(self, state)
+
+        self.softmax_temperature = 1
+        self.softmax_temperature_training = 3
+        self.focal_loss_factor = 2
 
     def train(self, batch, learning_rate, vloss_factor):
         states = []
@@ -29,8 +33,8 @@ class PVTorchNNModel(torch_nn_model.TorchNNModel, pv_model.PVModel):
         P_logits_t, V_t = self.network(state_t)
         vloss_fn = torch.nn.MSELoss()
         vloss = vloss_fn(V_t, target_V_t) * vloss_factor
-        P_t = torch.nn.Softmax(dim=1)(P_logits_t / self.get_softmax_temperature())
-        ploss = torch.mean(torch.sum(-factor_t * (action_t * torch.pow(1 - P_t, 2) * torch.log(P_t + 1e-6) + (1 - action_t) * torch.pow(P_t, 2) * torch.log(1 - P_t + 1e-6)), dim=1))
+        P_t = torch.nn.Softmax(dim=1)(P_logits_t / self.softmax_temperature_training)
+        ploss = torch.mean(torch.sum(-factor_t * (action_t * torch.pow(1 - P_t, self.focal_loss_factor) * torch.log(P_t + 1e-6) + (1 - action_t) * torch.pow(P_t, self.focal_loss_factor) * torch.log(1 - P_t + 1e-6)), dim=1))
         loss = vloss + ploss
         optimizer = torch.optim.Adam(self.network.parameters(), learning_rate, weight_decay=1e-4)
         optimizer.zero_grad()
@@ -56,7 +60,7 @@ class PVTorchNNModel(torch_nn_model.TorchNNModel, pv_model.PVModel):
 
     def get_P_t(self, state):
         P_logits_t = self.get_P_logits_t(state)
-        P_t = torch.nn.Softmax(dim=1)(P_logits_t / self.get_softmax_temperature())
+        P_t = torch.nn.Softmax(dim=1)(P_logits_t / (self.softmax_temperature_training if self.is_training else self.softmax_temperature))
         return P_t
 
     def get_legal_P_t(self, state):
@@ -66,6 +70,9 @@ class PVTorchNNModel(torch_nn_model.TorchNNModel, pv_model.PVModel):
         legal_P_t = torch.where(legal_action_mask_t, P_t, 0)
         legal_P_t /= torch.sum(legal_P_t)
         return legal_P_t
+
+    def get_legal_P(self, state):
+        return self.get_legal_P_t(state).cpu().detach().numpy().tolist()
 
     def get_P_range(self, state):
         legal_P_t = self.get_legal_P_t(state)

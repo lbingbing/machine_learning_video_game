@@ -71,6 +71,7 @@ def main(state, model, configs):
         model.load()
         print('model {} loaded'.format(model.get_model_path()))
     else:
+        model.initialize()
         print('model {} created'.format(model.get_model_path()))
     print('use {} device'.format(model.get_device()))
     model.set_training(True)

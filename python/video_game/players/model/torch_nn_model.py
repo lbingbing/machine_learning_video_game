@@ -15,6 +15,14 @@ class TorchNNModel(nn_model.NNModel):
     def create_network(self, state):
         raise NotImplementedError()
 
+    def initialize(self):
+        def init_parameters(m):
+            if isinstance(m, torch.nn.Linear) or isinstance(m, torch.nn.Conv2d):
+                torch.nn.init.xavier_uniform_(m.weight)
+                torch.nn.init.zeros_(m.bias)
+
+        self.network.apply(init_parameters)
+
     def save(self):
         torch.save(self.network.state_dict(), self.get_model_path())
 

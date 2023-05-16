@@ -5,11 +5,15 @@ from . import p_model
 from . import p_table
 
 class PTableModel(table_model.TableModel, p_model.PModel):
-    def create_table(self, state):
-        return p_table.PTable(state)
+    def __init__(self, state):
+        table_model.TableModel.__init__(self, state)
 
-    def get_softmax_temperature(self):
-        return 3 if self.is_training else 1
+        self.softmax_temperature = 1
+        self.softmax_temperature_training = 3
+        self.focal_loss_factor = 1
+
+    def create_table(self, state):
+        return p_table.PTable(state.get_state_dim(), state.get_action_dim())
 
     def train(self, batch, learning_rate):
         cross_entropy_errors = []
@@ -20,7 +24,7 @@ class PTableModel(table_model.TableModel, p_model.PModel):
                 P_logits_m = self.table.get_P_logits_m(state_index)
                 P_m = self.softmax(P_logits_m)
                 loss = -factor * np.sum(equivalent_action_m[i] * np.log(P_m + 1e-6) + (1 - equivalent_action_m[i]) * np.log(1 - P_m + 1e-6))
-                dloss = factor * (P_m - equivalent_action_m[i]) * np.abs(P_m - equivalent_action_m[i])
+                dloss = factor * (P_m - equivalent_action_m[i]) * np.power(np.abs(P_m - equivalent_action_m[i]), self.focal_loss_factor)
                 P_logits_m = P_logits_m - dloss * learning_rate
                 self.table.set_P_logits_m(state_index, P_logits_m)
                 cross_entropy_errors.append(loss)
@@ -37,7 +41,7 @@ class PTableModel(table_model.TableModel, p_model.PModel):
 
     def softmax(self, P_logits_m):
         P_m = P_logits_m.copy()
-        P_m /= self.get_softmax_temperature()
+        P_m /= self.softmax_temperature_training if self.is_training else self.softmax_temperature
         P_m -= np.max(P_m)
         P_m = np.exp(P_m)
         P_m = P_m / np.sum(P_m)
@@ -54,6 +58,9 @@ class PTableModel(table_model.TableModel, p_model.PModel):
         legal_P_m = np.where(legal_action_mask_m, P_m, 0)
         legal_P_m /= np.sum(legal_P_m)
         return legal_P_m
+
+    def get_legal_P(self, state):
+        return self.get_legal_P_m(state).tolist()
 
     def get_P_range(self, state):
         legal_P_m = self.get_legal_P_m(state)

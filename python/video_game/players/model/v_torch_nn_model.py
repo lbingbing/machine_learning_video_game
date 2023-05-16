@@ -5,6 +5,9 @@ from . import torch_nn_model
 from . import v_model
 
 class VTorchNNModel(torch_nn_model.TorchNNModel, v_model.VModel):
+    def __init__(self, state):
+        torch_nn_model.TorchNNModel.__init__(self, state)
+
     def train(self, batch, learning_rate):
         states = []
         target_Vs = []

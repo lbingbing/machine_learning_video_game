@@ -5,8 +5,11 @@ from . import q_model
 from . import q_table
 
 class QTableModel(table_model.TableModel, q_model.QModel):
+    def __init__(self, state):
+        table_model.TableModel.__init__(self, state)
+
     def create_table(self, state):
-        return q_table.QTable(state)
+        return q_table.QTable(state.get_state_dim(), state.get_action_dim())
 
     def train(self, batch, learning_rate):
         square_errors = []
