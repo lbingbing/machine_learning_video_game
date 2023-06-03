@@ -189,6 +189,9 @@ class SnakeState:
         action_numpy[action_index] = True
         return action_numpy.reshape(1, self.get_action_dim())
 
+    def get_legal_action_indexes(self):
+        return [self.action_to_action_index(action) for action in self.get_legal_actions()]
+
     def get_legal_action_mask_numpy(self):
         legal_action_mask_numpy = np.zeros((self.get_action_dim(),), dtype=bool)
         legal_action_indexes = [self.action_to_action_index(action) for action in self.get_legal_actions()]
@@ -231,4 +234,4 @@ class SnakeState:
             axis=0).reshape(action_numpy.shape[0]*self.get_equivalent_num(), self.get_action_dim())
 
 def create_state():
-    return SnakeState((5, 5))
+    return SnakeState((6, 6))

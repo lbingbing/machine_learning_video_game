@@ -5,8 +5,8 @@ from . import torch_nn_model
 from . import q_model
 
 class QTorchNNModel(torch_nn_model.TorchNNModel, q_model.QModel):
-    def __init__(self, state):
-        torch_nn_model.TorchNNModel.__init__(self, state)
+    def __init__(self, game_name, network):
+        torch_nn_model.TorchNNModel.__init__(self, game_name, network)
 
     def train(self, batch, learning_rate):
         states = []
@@ -32,33 +32,35 @@ class QTorchNNModel(torch_nn_model.TorchNNModel, q_model.QModel):
         return loss.item()
 
     def get_Q_t(self, state):
-        state_m = state.to_state_numpy()
-        state_t = torch.tensor(state_m).to(self.device)
-        Q_t = self.network(state_t)
-        return Q_t
+        with torch.no_grad():
+            state_m = state.to_state_numpy()
+            state_t = torch.tensor(state_m).to(self.device)
+            Q_t = self.network(state_t)
+            return Q_t
 
     def get_action_Q(self, state, action):
-        Q_t = self.get_Q_t(state)
-        action_m = state.action_to_action_numpy(action)
-        action_t = torch.tensor(action_m).to(self.device)
-        return torch.max(torch.where(action_t, Q_t, -np.inf)).item()
+        with torch.no_grad():
+            Q_t = self.get_Q_t(state)
+            action_m = state.action_to_action_numpy(action)
+            action_t = torch.tensor(action_m).to(self.device)
+            return torch.max(torch.where(action_t, Q_t, -np.inf)).item()
 
     def get_legal_Q_t(self, state):
-        Q_t = self.get_Q_t(state)
-        legal_action_mask_m = state.get_legal_action_mask_numpy()
-        legal_action_mask_t = torch.tensor(legal_action_mask_m).to(self.device)
-        legal_Q_t = torch.where(legal_action_mask_t, Q_t, -np.inf)
-        return legal_Q_t
+        with torch.no_grad():
+            Q_t = self.get_Q_t(state)
+            legal_action_mask_m = state.get_legal_action_mask_numpy()
+            legal_action_mask_t = torch.tensor(legal_action_mask_m).to(self.device)
+            legal_Q_t = torch.where(legal_action_mask_t, Q_t, -np.inf)
+            return legal_Q_t
 
     def get_max_Q(self, state):
-        legal_Q_t = self.get_legal_Q_t(state)
-        return torch.max(legal_Q_t).item()
-
-    def get_opt_action(self, state):
-        legal_Q_t = self.get_legal_Q_t(state)
-        opt_action_index = torch.argmax(legal_Q_t).item()
-        action = state.action_index_to_action(opt_action_index)
-        return action
+        with torch.no_grad():
+            legal_Q_t = self.get_legal_Q_t(state)
+            return torch.max(legal_Q_t).item()
 
     def get_action(self, state):
-        return self.get_opt_action(state)
+        with torch.no_grad():
+            legal_Q_t = self.get_legal_Q_t(state)
+            opt_action_index = torch.argmax(legal_Q_t).item()
+            action = state.action_index_to_action(opt_action_index)
+            return action

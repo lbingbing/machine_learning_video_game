@@ -9,6 +9,9 @@ class QTable:
     def initialize(self):
         self.table = np.zeros((self.state_dim, self.action_dim), dtype=np.float32)
 
+    def get_entry_number(self):
+        return self.state_dim * self.action_dim
+
     def save(self, file_path):
         with open(file_path, 'wb') as f:
             np.save(f, self.table)

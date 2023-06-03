@@ -1,10 +1,10 @@
 from . import model
 
 class TableModel(model.Model):
-    def __init__(self, state):
-        super().__init__(state.get_name())
+    def __init__(self, game_name, table):
+        super().__init__(game_name)
 
-        self.table = self.create_table(state)
+        self.table = table
 
     def get_model_structure(self):
         return 'table'
@@ -14,6 +14,9 @@ class TableModel(model.Model):
 
     def initialize(self):
         self.table.initialize()
+
+    def get_parameter_number(self):
+        return self.table.get_entry_number()
 
     def save(self):
         self.table.save(self.get_model_path())

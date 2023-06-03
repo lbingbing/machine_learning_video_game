@@ -10,22 +10,22 @@ def create_player(state, player_type):
         p = random_player.RandomPlayer()
     elif player_type == player.GMCC_TORCH_NN_PLAYER:
         from .gmcc import tetris_gmcc_torch_nn_player
-        p = tetris_gmcc_torch_nn_player.TetrisGMCCTorchNNPlayer(state)
+        p = tetris_gmcc_torch_nn_player.create_player(state)
     elif player_type == player.SGNSARSA_TORCH_NN_PLAYER:
         from .sgnsarsa import tetris_sgnsarsa_torch_nn_player
-        p = tetris_sgnsarsa_torch_nn_player.TetrisSGNSarsaTorchNNPlayer(state)
+        p = tetris_sgnsarsa_torch_nn_player.create_player(state)
     elif player_type == player.SGQL_TORCH_NN_PLAYER:
         from .sgql import tetris_sgql_torch_nn_player
-        p = tetris_sgql_torch_nn_player.TetrisSGQLTorchNNPlayer(state)
+        p = tetris_sgql_torch_nn_player.create_player(state)
     elif player_type == player.MCPGC_TORCH_NN_PLAYER:
         from .mcpgc import tetris_mcpgc_torch_nn_player
-        p = tetris_mcpgc_torch_nn_player.TetrisMCPGCTorchNNPlayer(state)
+        p = tetris_mcpgc_torch_nn_player.create_player(state)
     elif player_type == player.MCPGCB_TORCH_NN_PLAYER:
         from .mcpgcb import tetris_mcpgcb_torch_nn_player
-        p = tetris_mcpgcb_torch_nn_player.TetrisMCPGCBTorchNNPlayer(state)
+        p = tetris_mcpgcb_torch_nn_player.create_player(state)
     elif player_type == player.NACTORCRITIC_TORCH_NN_PLAYER:
         from .nactorcritic import tetris_nactorcritic_torch_nn_player
-        p = tetris_nactorcritic_torch_nn_player.TetrisNActorCriticTorchNNPlayer(state)
+        p = tetris_nactorcritic_torch_nn_player.create_player(state)
     else:
         assert False
     return p

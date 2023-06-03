@@ -3,7 +3,7 @@ from . import flappybird_nactorcritic_torch_nn_player
 from . import nactorcritic_model_train
 
 state = flappybird_state.create_state()
-model = flappybird_nactorcritic_torch_nn_player.FlappyBirdNActorCriticTorchNNModel(state)
+model = flappybird_nactorcritic_torch_nn_player.create_model(state)
 
 configs = {
     'check_interval': 500,
@@ -14,7 +14,7 @@ configs = {
     'replay_memory_size': 4096,
     'batch_num_per_iteration': 2,
     'batch_size': 32,
-    'dynamic_learning_rate': [0.001, 0.001, 100000],
+    'dynamic_learning_rate': 0.001,
     'vloss_factor': 1,
     }
 

@@ -1,9 +1,8 @@
 from . import sgql_table_model
 from ..model import model_player
 
-class GridWalkSGQLTableModel(sgql_table_model.SGQLTableModel):
-    pass
+def create_model(state):
+    return sgql_table_model.SGQLTableModel(state.get_name(), state.get_state_dim(), state.get_action_dim())
 
-class GridWalkSGQLTablePlayer(model_player.ModelPlayer):
-    def create_model(self, state):
-        return GridWalkSGQLTableModel(state)
+def create_player(state):
+    return model_player.ModelPlayer(create_model(state))

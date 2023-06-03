@@ -1,9 +1,8 @@
 from . import gmcc_table_model
 from ..model import model_player
 
-class GridWalkGMCCTableModel(gmcc_table_model.GMCCTableModel):
-    pass
+def create_model(state):
+    return gmcc_table_model.GMCCTableModel(state.get_name(), state.get_state_dim(), state.get_action_dim())
 
-class GridWalkGMCCTablePlayer(model_player.ModelPlayer):
-    def create_model(self, state):
-        return GridWalkGMCCTableModel(state)
+def create_player(state):
+    return model_player.ModelPlayer(create_model(state))

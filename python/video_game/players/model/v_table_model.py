@@ -3,11 +3,8 @@ from . import v_model
 from . import v_table
 
 class VTableModel(table_model.TableModel, v_model.VModel):
-    def __init__(self, state):
-        table_model.TableModel.__init__(self, state)
-
-    def create_table(self, state):
-        return v_table.VTable(state.get_state_dim())
+    def __init__(self, game_name, state_dim):
+        table_model.TableModel.__init__(self, game_name, v_table.VTable(state_dim))
 
     def train(self, batch, learning_rate):
         square_errors = []

@@ -5,13 +5,13 @@ class PVModel:
     def get_V(self, state):
         raise NotImplementedError()
 
-    def get_P_logit_range(self, state):
+    def get_legal_P_logit_range(self, state):
         raise NotImplementedError()
 
-    def get_legal_P(self, state):
+    def get_P(self, state):
         raise NotImplementedError()
 
-    def get_P_range(self, state):
+    def get_legal_P_range(self, state):
         raise NotImplementedError()
 
     def get_action(self, state):

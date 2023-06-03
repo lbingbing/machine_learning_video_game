@@ -3,17 +3,22 @@ import torch
 from . import nn_model
 
 class TorchNNModel(nn_model.NNModel):
-    def __init__(self, state):
-        super().__init__(state)
+    def __init__(self, game_name, network):
+        super().__init__(game_name)
 
         self.device = "cuda" if torch.cuda.is_available() else 'cpu'
-        self.network = self.create_network(state).to(self.device)
+        self.network = network.to(self.device)
+
+    def set_device(self, device):
+        super().set_device(device)
+        self.network.to(device)
+
+    def set_training(self, b):
+        super().set_training(b)
+        self.network.train(b)
 
     def get_nn_framework(self):
         return 'torch'
-
-    def create_network(self, state):
-        raise NotImplementedError()
 
     def initialize(self):
         def init_parameters(m):
@@ -22,6 +27,9 @@ class TorchNNModel(nn_model.NNModel):
                 torch.nn.init.zeros_(m.bias)
 
         self.network.apply(init_parameters)
+
+    def get_parameter_number(self):
+        return sum(p.numel() for p in self.network.parameters() if p.requires_grad)
 
     def save(self):
         torch.save(self.network.state_dict(), self.get_model_path())

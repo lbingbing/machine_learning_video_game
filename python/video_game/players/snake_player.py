@@ -10,22 +10,22 @@ def create_player(state, player_type):
         p = random_player.RandomPlayer()
     elif player_type == player.GMCC_TORCH_NN_PLAYER:
         from .gmcc import snake_gmcc_torch_nn_player
-        p = snake_gmcc_torch_nn_player.SnakeGMCCTorchNNPlayer(state)
+        p = snake_gmcc_torch_nn_player.create_player(state)
     elif player_type == player.SGNSARSA_TORCH_NN_PLAYER:
         from .sgnsarsa import snake_sgnsarsa_torch_nn_player
-        p = snake_sgnsarsa_torch_nn_player.SnakeSGNSarsaTorchNNPlayer(state)
+        p = snake_sgnsarsa_torch_nn_player.create_player(state)
     elif player_type == player.SGQL_TORCH_NN_PLAYER:
         from .sgql import snake_sgql_torch_nn_player
-        p = snake_sgql_torch_nn_player.SnakeSGQLTorchNNPlayer(state)
+        p = snake_sgql_torch_nn_player.create_player(state)
     elif player_type == player.MCPGC_TORCH_NN_PLAYER:
         from .mcpgc import snake_mcpgc_torch_nn_player
-        p = snake_mcpgc_torch_nn_player.SnakeMCPGCTorchNNPlayer(state)
+        p = snake_mcpgc_torch_nn_player.create_player(state)
     elif player_type == player.MCPGCB_TORCH_NN_PLAYER:
         from .mcpgcb import snake_mcpgcb_torch_nn_player
-        p = snake_mcpgcb_torch_nn_player.SnakeMCPGCBTorchNNPlayer(state)
+        p = snake_mcpgcb_torch_nn_player.create_player(state)
     elif player_type == player.NACTORCRITIC_TORCH_NN_PLAYER:
         from .nactorcritic import snake_nactorcritic_torch_nn_player
-        p = snake_nactorcritic_torch_nn_player.SnakeNActorCriticTorchNNPlayer(state)
+        p = snake_nactorcritic_torch_nn_player.create_player(state)
     else:
         assert False
     return p

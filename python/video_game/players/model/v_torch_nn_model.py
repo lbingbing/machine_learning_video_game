@@ -5,8 +5,8 @@ from . import torch_nn_model
 from . import v_model
 
 class VTorchNNModel(torch_nn_model.TorchNNModel, v_model.VModel):
-    def __init__(self, state):
-        torch_nn_model.TorchNNModel.__init__(self, state)
+    def __init__(self, game_name, network):
+        torch_nn_model.TorchNNModel.__init__(self, game_name, network)
 
     def train(self, batch, learning_rate):
         states = []
@@ -28,8 +28,9 @@ class VTorchNNModel(torch_nn_model.TorchNNModel, v_model.VModel):
         return loss.item()
 
     def get_V(self, state):
-        state_m = state.to_state_numpy()
-        state_t = torch.tensor(state_m).to(self.device)
-        V_t = self.network(state_t)
-        return V_t.item()
+        with torch.no_grad():
+            state_m = state.to_state_numpy()
+            state_t = torch.tensor(state_m).to(self.device)
+            V_t = self.network(state_t)
+            return V_t.item()
 

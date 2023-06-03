@@ -10,22 +10,22 @@ def create_player(state, player_type):
         p = random_player.RandomPlayer()
     elif player_type == player.GMCC_TORCH_NN_PLAYER:
         from .gmcc import bombman_gmcc_torch_nn_player
-        p = bombman_gmcc_torch_nn_player.BombManGMCCTorchNNPlayer(state)
+        p = bombman_gmcc_torch_nn_player.create_player(state)
     elif player_type == player.SGNSARSA_TORCH_NN_PLAYER:
         from .sgnsarsa import bombman_sgnsarsa_torch_nn_player
-        p = bombman_sgnsarsa_torch_nn_player.BombManSGNSarsaTorchNNPlayer(state)
+        p = bombman_sgnsarsa_torch_nn_player.create_player(state)
     elif player_type == player.SGQL_TORCH_NN_PLAYER:
         from .sgql import bombman_sgql_torch_nn_player
-        p = bombman_sgql_torch_nn_player.BombManSGQLTorchNNPlayer(state)
+        p = bombman_sgql_torch_nn_player.create_player(state)
     elif player_type == player.MCPGC_TORCH_NN_PLAYER:
         from .mcpgc import bombman_mcpgc_torch_nn_player
-        p = bombman_mcpgc_torch_nn_player.BombManMCPGCTorchNNPlayer(state)
+        p = bombman_mcpgc_torch_nn_player.create_player(state)
     elif player_type == player.MCPGCB_TORCH_NN_PLAYER:
         from .mcpgcb import bombman_mcpgcb_torch_nn_player
-        p = bombman_mcpgcb_torch_nn_player.BombManMCPGCBTorchNNPlayer(state)
+        p = bombman_mcpgcb_torch_nn_player.create_player(state)
     elif player_type == player.NACTORCRITIC_TORCH_NN_PLAYER:
         from .nactorcritic import bombman_nactorcritic_torch_nn_player
-        p = bombman_nactorcritic_torch_nn_player.BombManNActorCriticTorchNNPlayer(state)
+        p = bombman_nactorcritic_torch_nn_player.create_player(state)
     else:
         assert False
     return p

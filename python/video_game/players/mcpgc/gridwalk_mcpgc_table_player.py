@@ -1,9 +1,8 @@
 from . import mcpgc_table_model
 from ..model import model_player
 
-class GridWalkMCPGCTableModel(mcpgc_table_model.MCPGCTableModel):
-    pass
+def create_model(state):
+    return mcpgc_table_model.MCPGCTableModel(state.get_name(), state.get_state_dim(), state.get_action_dim())
 
-class GridWalkMCPGCTablePlayer(model_player.ModelPlayer):
-    def create_model(self, state):
-        return GridWalkMCPGCTableModel(state)
+def create_player(state):
+    return model_player.ModelPlayer(create_model(state))

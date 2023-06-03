@@ -6,6 +6,10 @@ class Model:
         self.device = 'cpu'
         self.is_training = False
 
+    def set_device(self, device):
+        assert device in ('cpu', 'cuda')
+        self.device = device
+
     def get_device(self):
         return self.device
 
@@ -25,6 +29,9 @@ class Model:
         return os.path.isfile(self.get_model_path())
 
     def initialize(self):
+        raise NotImplementedError()
+
+    def get_parameter_number(self):
         raise NotImplementedError()
 
     def save(self):

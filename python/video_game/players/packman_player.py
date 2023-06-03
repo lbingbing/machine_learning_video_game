@@ -10,22 +10,22 @@ def create_player(state, player_type):
         p = random_player.RandomPlayer()
     elif player_type == player.GMCC_TORCH_NN_PLAYER:
         from .gmcc import packman_gmcc_torch_nn_player
-        p = packman_gmcc_torch_nn_player.PackManGMCCTorchNNPlayer(state)
+        p = packman_gmcc_torch_nn_player.create_player(state)
     elif player_type == player.SGNSARSA_TORCH_NN_PLAYER:
         from .sgnsarsa import packman_sgnsarsa_torch_nn_player
-        p = packman_sgnsarsa_torch_nn_player.PackManSGNSarsaTorchNNPlayer(state)
+        p = packman_sgnsarsa_torch_nn_player.create_player(state)
     elif player_type == player.SGQL_TORCH_NN_PLAYER:
         from .sgql import packman_sgql_torch_nn_player
-        p = packman_sgql_torch_nn_player.PackManSGQLTorchNNPlayer(state)
+        p = packman_sgql_torch_nn_player.create_player(state)
     elif player_type == player.MCPGC_TORCH_NN_PLAYER:
         from .mcpgc import packman_mcpgc_torch_nn_player
-        p = packman_mcpgc_torch_nn_player.PackManMCPGCTorchNNPlayer(state)
+        p = packman_mcpgc_torch_nn_player.create_player(state)
     elif player_type == player.MCPGCB_TORCH_NN_PLAYER:
         from .mcpgcb import packman_mcpgcb_torch_nn_player
-        p = packman_mcpgcb_torch_nn_player.PackManMCPGCBTorchNNPlayer(state)
+        p = packman_mcpgcb_torch_nn_player.create_player(state)
     elif player_type == player.NACTORCRITIC_TORCH_NN_PLAYER:
         from .nactorcritic import packman_nactorcritic_torch_nn_player
-        p = packman_nactorcritic_torch_nn_player.PackManNActorCriticTorchNNPlayer(state)
+        p = packman_nactorcritic_torch_nn_player.create_player(state)
     else:
         assert False
     return p

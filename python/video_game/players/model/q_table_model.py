@@ -5,11 +5,8 @@ from . import q_model
 from . import q_table
 
 class QTableModel(table_model.TableModel, q_model.QModel):
-    def __init__(self, state):
-        table_model.TableModel.__init__(self, state)
-
-    def create_table(self, state):
-        return q_table.QTable(state.get_state_dim(), state.get_action_dim())
+    def __init__(self, game_name, state_dim, action_dim):
+        table_model.TableModel.__init__(self, game_name, q_table.QTable(state_dim, action_dim))
 
     def train(self, batch, learning_rate):
         square_errors = []
@@ -46,11 +43,8 @@ class QTableModel(table_model.TableModel, q_model.QModel):
         legal_Q_m = self.get_legal_Q_m(state)
         return np.max(legal_Q_m)
 
-    def get_opt_action(self, state):
+    def get_action(self, state):
         legal_Q_m = self.get_legal_Q_m(state)
         opt_action_index = np.argmax(legal_Q_m)
         action = state.action_index_to_action(opt_action_index)
         return action
-
-    def get_action(self, state):
-        return self.get_opt_action(state)

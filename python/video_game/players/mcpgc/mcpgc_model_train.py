@@ -6,8 +6,12 @@ from ..utils import replay_memory
 from ..utils import train_flags
 
 def sample(state, model, rmemory, configs):
+    model.set_training(False)
+
     episode_num_per_iteration = configs['episode_num_per_iteration']
     discount = configs['discount']
+
+    rmemory.resize(configs['replay_memory_size'])
 
     scores = []
     ages = []
@@ -33,10 +37,17 @@ def sample(state, model, rmemory, configs):
             Fs.append(F)
             F *= discount
         for (S, A, R), G, F in zip(samples, Gs, Fs):
-            rmemory.record((S, A, F*G))
+            p_factor = F * G
+            P = [0] * state.get_action_dim()
+            P[state.action_to_action_index(A)] = 1
+            if p_factor < 0:
+                P = [1 - e for e in P]
+            rmemory.record((S, P, abs(p_factor)))
     return scores, ages
 
 def train(model, rmemory, configs, iteration_id):
+    model.set_training(True)
+
     batch_num_per_iteration = configs['batch_num_per_iteration']
     batch_size = configs['batch_size']
     learning_rate = train_utils.get_dynamic_learning_rate(iteration_id, configs['dynamic_learning_rate'])
@@ -50,24 +61,17 @@ def train(model, rmemory, configs, iteration_id):
 
 def main(state, model, configs):
     parser = argparse.ArgumentParser('train {} mcpgc model'.format(state.get_name()))
+    train_utils.add_train_arguments(parser)
     args = parser.parse_args()
 
     if not train_flags.check_and_update_train_configs(model.get_model_path(), configs):
         print('train configs:')
-        for k, v in configs.items():
-            print('{}: {}'.format(k, v))
+        train_flags.print_train_configs(configs)
 
     check_interval = configs['check_interval']
     save_model_interval = configs['save_model_interval']
 
-    if model.exists():
-        model.load()
-        print('model {} loaded'.format(model.get_model_path()))
-    else:
-        model.initialize()
-        print('model {} created'.format(model.get_model_path()))
-    print('use {} device'.format(model.get_device()))
-    model.set_training(True)
+    train_utils.init_model(model, args.device)
 
     rmemory = replay_memory.ReplayMemory(configs['replay_memory_size'])
 
@@ -83,12 +87,13 @@ def main(state, model, configs):
         need_check = iteration_id % check_interval == 0
         if need_check:
             state.reset()
-            P_logit_range = model.get_P_logit_range(state)
-            P_range = model.get_P_range(state)
+            model.set_training(False)
+            legal_P_logit_range = model.get_legal_P_logit_range(state)
+            legal_P_range = model.get_legal_P_range(state)
             avg_loss = sum(losses) / len(losses)
             avg_score = sum(scores) / len(scores)
             avg_age = sum(ages) / len(ages)
-            print('{} iteration: {} avg_loss: {:.8f} P_logit_range: [{:.4f}, {:.4f}] P_range: [{:.4f}, {:.4f}] avg_score: {:.2f} avg_age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_loss, *P_logit_range, *P_range, avg_score, avg_age))
+            print('{} iter: {} loss: {:.2f} P_logit_range: [{:.2f}, {:.2f}] P_range: [{:.2f}, {:.2f}] score: {:.2f} age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_loss, *legal_P_logit_range, *legal_P_range, avg_score, avg_age))
             losses.clear()
             scores.clear()
             ages.clear()
@@ -98,4 +103,6 @@ def main(state, model, configs):
             print('model {} saved'.format(model.get_model_path()))
         if need_check and train_flags.check_and_clear_stop_train_flag_file(model.get_model_path()):
             print('stopped')
+            break
+        if args.iteration_num > 0 and iteration_id >= args.iteration_num:
             break

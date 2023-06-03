@@ -8,8 +8,5 @@ class QModel:
     def get_max_Q(self, state):
         raise NotImplementedError()
 
-    def get_opt_action(self, state):
-        raise NotImplementedError()
-
     def get_action(self, state):
         raise NotImplementedError()
