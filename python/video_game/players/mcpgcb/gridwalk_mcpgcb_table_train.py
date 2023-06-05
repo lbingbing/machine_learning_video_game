@@ -6,8 +6,6 @@ state = gridwalk_state.create_state()
 model = gridwalk_mcpgcb_table_player.create_model(state)
 
 configs = {
-    'check_interval': 5000,
-    'save_model_interval': 1000000,
     'episode_num_per_iteration': 2,
     'discount': 0.99,
     'replay_memory_size': 1024,

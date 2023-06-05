@@ -5,8 +5,9 @@ import itertools
 from ..utils import train_utils
 from ..utils import replay_memory
 from ..utils import train_flags
+from ..utils import train_monitor
 
-def sample(state, model, rmemory, configs):
+def sample(state, model, rmemory, configs, monitor):
     model.set_training(False)
 
     episode_num_per_iteration = configs['episode_num_per_iteration']
@@ -19,6 +20,8 @@ def sample(state, model, rmemory, configs):
     ages = []
     for episode_id in range(episode_num_per_iteration):
         state.reset()
+        if monitor:
+            monitor.send_state(state.clone())
         for t in itertools.count():
             state1 = state.clone()
             epsilon = train_utils.get_dynamic_epsilon(t, dynamic_epsilon)
@@ -33,6 +36,8 @@ def sample(state, model, rmemory, configs):
             is_end = state.is_end()
             max_Q = 0 if is_end else model.get_max_Q(state)
             rmemory.record((state1, action, R+max_Q))
+            if monitor:
+                monitor.send_state(state.clone())
             if is_end:
                 break
         scores.append(state.get_score())
@@ -62,9 +67,6 @@ def main(state, model, configs):
         print('train configs:')
         train_flags.print_train_configs(configs)
 
-    check_interval = configs['check_interval']
-    save_model_interval = configs['save_model_interval']
-
     train_utils.init_model(model, args.device)
 
     rmemory = replay_memory.ReplayMemory(configs['replay_memory_size'])
@@ -72,30 +74,32 @@ def main(state, model, configs):
     losses = []
     scores = []
     ages = []
-    for iteration_id in itertools.count(1):
-        scores1, ages1 = sample(state, model, rmemory, configs)
-        losses1 = train(model, rmemory, configs, iteration_id)
-        losses += losses1
-        scores += scores1
-        ages += ages1
-        need_check = iteration_id % check_interval == 0
-        if need_check:
-            state.reset()
-            model.set_training(False)
-            max_Q = model.get_max_Q(state)
-            avg_loss = sum(losses) / len(losses)
-            avg_score = sum(scores) / len(scores)
-            avg_age = sum(ages) / len(ages)
-            print('{} iter: {} loss: {:.2f} max_Q: {:.2f} score: {:.2f} age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_loss, max_Q, avg_score, avg_age))
-            losses.clear()
-            scores.clear()
-            ages.clear()
-            train_flags.check_and_update_train_configs(model.get_model_path(), configs)
-        if iteration_id % save_model_interval == 0 or (need_check and train_flags.check_and_clear_save_model_flag_file(model.get_model_path())):
-            model.save()
-            print('model {} saved'.format(model.get_model_path()))
-        if need_check and train_flags.check_and_clear_stop_train_flag_file(model.get_model_path()):
-            print('stopped')
-            break
-        if args.iteration_num > 0 and iteration_id >= args.iteration_num:
-            break
+    with train_monitor.create_training_monitor(args.monitor_port) as monitor:
+        for iteration_id in itertools.count(1):
+            scores1, ages1 = sample(state, model, rmemory, configs, monitor)
+            losses1 = train(model, rmemory, configs, iteration_id)
+            losses += losses1
+            scores += scores1
+            ages += ages1
+            need_check = iteration_id % args.check_interval == 0
+            if need_check:
+                state.reset()
+                model.set_training(False)
+                max_Q = model.get_max_Q(state)
+                avg_loss = sum(losses) / len(losses)
+                avg_score = sum(scores) / len(scores)
+                avg_age = sum(ages) / len(ages)
+                print('{} iter: {} loss: {:.2f} max_Q: {:.2f} score: {:.2f} age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_loss, max_Q, avg_score, avg_age))
+                losses.clear()
+                scores.clear()
+                ages.clear()
+                train_flags.check_and_update_train_configs(model.get_model_path(), configs)
+            if iteration_id % args.save_model_interval == 0 or (need_check and train_flags.check_and_clear_save_model_flag_file(model.get_model_path())):
+                model.save()
+                print('model {} saved'.format(model.get_model_path()))
+            if need_check and train_flags.check_and_clear_stop_train_flag_file(model.get_model_path()):
+                print('stopped')
+                break
+            if args.iteration_num > 0 and iteration_id >= args.iteration_num:
+                print('finish')
+                break

@@ -4,8 +4,9 @@ import itertools
 from ..utils import train_utils
 from ..utils import replay_memory
 from ..utils import train_flags
+from ..utils import train_monitor
 
-def sample(state, model, rmemory, configs):
+def sample(state, model, rmemory, configs, monitor):
     model.set_training(False)
 
     episode_num_per_iteration = configs['episode_num_per_iteration']
@@ -19,6 +20,8 @@ def sample(state, model, rmemory, configs):
     for episode_id in range(episode_num_per_iteration):
         samples = []
         state.reset()
+        if monitor:
+            monitor.send_state(state.clone())
         is_end = False
         F = 1
         for t in itertools.count():
@@ -30,6 +33,8 @@ def sample(state, model, rmemory, configs):
                 state.update()
                 R = state.get_reward()
                 samples.append((state1, action, R, V))
+                if monitor:
+                    monitor.send_state(state.clone())
                 if state.is_end():
                     is_end = True
                     scores.append(state.get_score())
@@ -82,9 +87,6 @@ def main(state, model, configs):
         print('train configs:')
         train_flags.print_train_configs(configs)
 
-    check_interval = configs['check_interval']
-    save_model_interval = configs['save_model_interval']
-
     train_utils.init_model(model, args.device)
 
     rmemory = replay_memory.ReplayMemory(configs['replay_memory_size'])
@@ -93,35 +95,37 @@ def main(state, model, configs):
     vlosses = []
     scores = []
     ages = []
-    for iteration_id in itertools.count(1):
-        scores1, ages1 = sample(state, model, rmemory, configs)
-        plosses1, vlosses1 = train(model, rmemory, configs, iteration_id)
-        plosses += plosses1
-        vlosses += vlosses1
-        scores += scores1
-        ages += ages1
-        need_check = iteration_id % check_interval == 0
-        if need_check:
-            state.reset()
-            model.set_training(False)
-            V = model.get_V(state)
-            legal_P_logit_range = model.get_legal_P_logit_range(state)
-            legal_P_range = model.get_legal_P_range(state)
-            avg_ploss = sum(plosses) / len(plosses)
-            avg_vloss = sum(vlosses) / len(vlosses)
-            avg_score = sum(scores) / len(scores)
-            avg_age = sum(ages) / len(ages)
-            print('{} iter: {} ploss: {:.2f} vloss: {:.2f} V: {:.2f} P_logit_range: [{:.2f}, {:.2f}] P_range: [{:.2f}, {:.2f}] score: {:.2f} age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_ploss, avg_vloss, V, *legal_P_logit_range, *legal_P_range, avg_score, avg_age))
-            plosses.clear()
-            vlosses.clear()
-            scores.clear()
-            ages.clear()
-            train_flags.check_and_update_train_configs(model.get_model_path(), configs)
-        if iteration_id % save_model_interval == 0 or (need_check and train_flags.check_and_clear_save_model_flag_file(model.get_model_path())):
-            model.save()
-            print('model {} saved'.format(model.get_model_path()))
-        if need_check and train_flags.check_and_clear_stop_train_flag_file(model.get_model_path()):
-            print('stopped')
-            break
-        if args.iteration_num > 0 and iteration_id >= args.iteration_num:
-            break
+    with train_monitor.create_training_monitor(args.monitor_port) as monitor:
+        for iteration_id in itertools.count(1):
+            scores1, ages1 = sample(state, model, rmemory, configs, monitor)
+            plosses1, vlosses1 = train(model, rmemory, configs, iteration_id)
+            plosses += plosses1
+            vlosses += vlosses1
+            scores += scores1
+            ages += ages1
+            need_check = iteration_id % args.check_interval == 0
+            if need_check:
+                state.reset()
+                model.set_training(False)
+                V = model.get_V(state)
+                legal_P_logit_range = model.get_legal_P_logit_range(state)
+                legal_P_range = model.get_legal_P_range(state)
+                avg_ploss = sum(plosses) / len(plosses)
+                avg_vloss = sum(vlosses) / len(vlosses)
+                avg_score = sum(scores) / len(scores)
+                avg_age = sum(ages) / len(ages)
+                print('{} iter: {} ploss: {:.2f} vloss: {:.2f} V: {:.2f} P_logit_range: [{:.2f}, {:.2f}] P_range: [{:.2f}, {:.2f}] score: {:.2f} age: {:.2f}'.format(train_utils.get_current_time_str(), iteration_id, avg_ploss, avg_vloss, V, *legal_P_logit_range, *legal_P_range, avg_score, avg_age))
+                plosses.clear()
+                vlosses.clear()
+                scores.clear()
+                ages.clear()
+                train_flags.check_and_update_train_configs(model.get_model_path(), configs)
+            if iteration_id % args.save_model_interval == 0 or (need_check and train_flags.check_and_clear_save_model_flag_file(model.get_model_path())):
+                model.save()
+                print('model {} saved'.format(model.get_model_path()))
+            if need_check and train_flags.check_and_clear_stop_train_flag_file(model.get_model_path()):
+                print('stopped')
+                break
+            if args.iteration_num > 0 and iteration_id >= args.iteration_num:
+                print('finish')
+                break

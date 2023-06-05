@@ -1,24 +1,24 @@
 from PySide6 import QtCore, QtGui
 
 from ..states import snake_state
-from ..players import snake_player
+from . import snake_qt_game_utils
 from . import qt_game
 
 class SnakeGameWidget(qt_game.GameWidget):
-    def init_state(self):
-        self.state = snake_state.create_state()
+    def create_state(self):
+        return snake_qt_game_utils.create_state()
 
     def create_player(self, state, player_type):
-        return snake_player.create_player(state, player_type)
+        return snake_qt_game_utils.create_player(state, player_type)
 
-    def init_gui_parameters(self):
-        self.unit_size = 30
+    def get_unit_size(self):
+        return snake_qt_game_utils.get_unit_size()
 
-    def init_state_update_interval(self):
-        if self.is_human_player():
-            self.state_update_interval = 0.3
-        else:
-            self.state_update_interval = 0.1
+    def get_state_update_interval(self):
+        return snake_qt_game_utils.get_state_update_interval(self.is_human_player())
+
+    def draw_canvas(self, painter):
+        snake_qt_game_utils.draw_canvas(self.state, self.unit_size, painter)
 
     def handle_human_player_events(self, event):
         if event.type() == QtCore.QEvent.KeyPress:
@@ -31,21 +31,5 @@ class SnakeGameWidget(qt_game.GameWidget):
                     self.state.do_action(snake_state.LEFT)
                 if event.key() == QtCore.Qt.Key_Right:
                     self.state.do_action(snake_state.RIGHT)
-
-    def draw_canvas(self, painter):
-        for i in range(self.state.get_canvas_shape()[0]):
-            for j in range(self.state.get_canvas_shape()[1]):
-                rect = ((j + 1) * self.unit_size, (i + 1) * self.unit_size, self.unit_size, self.unit_size)
-                if self.state.canvas[i][j] == snake_state.BACKGROUND:
-                    painter.setBrush(QtGui.QColor(255, 255, 255))
-                elif self.state.canvas[i][j] == snake_state.SNAKE_HEAD:
-                    painter.setBrush(QtGui.QColor(128, 0, 0))
-                elif self.state.canvas[i][j] == snake_state.SNAKE_BODY:
-                    painter.setBrush(QtGui.QColor(255, 0, 0))
-                elif self.state.canvas[i][j] == snake_state.TARGET:
-                    painter.setBrush(QtGui.QColor(0, 0, 255))
-                else:
-                    assert False
-                painter.drawRect(*rect)
 
 qt_game.main(SnakeGameWidget)

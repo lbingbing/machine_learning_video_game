@@ -6,8 +6,6 @@ state = bombman_state.create_state()
 model = bombman_nactorcritic_torch_nn_player.create_model(state)
 
 configs = {
-    'check_interval': 500,
-    'save_model_interval': 100000,
     'episode_num_per_iteration': 2,
     'step_num': 4,
     'discount': 0.99,

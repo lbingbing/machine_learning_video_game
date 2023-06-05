@@ -6,8 +6,6 @@ state = packman_state.create_state()
 model = packman_mcpgcb_torch_nn_player.create_model(state)
 
 configs = {
-    'check_interval': 500,
-    'save_model_interval': 100000,
     'episode_num_per_iteration': 2,
     'discount': 0.99,
     'replay_memory_size': 4096,

@@ -6,8 +6,6 @@ state = snake_state.create_state()
 model = snake_sgql_torch_nn_player.create_model(state)
 
 configs = {
-    'check_interval': 500,
-    'save_model_interval': 100000,
     'episode_num_per_iteration': 2,
     'dynamic_epsilon': 0.1,
     'discount': 0.99,

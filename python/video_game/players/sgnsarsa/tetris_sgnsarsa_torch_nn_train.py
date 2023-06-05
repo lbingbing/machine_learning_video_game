@@ -6,8 +6,6 @@ state = tetris_state.create_state()
 model = tetris_sgnsarsa_torch_nn_player.create_model(state)
 
 configs = {
-    'check_interval': 100,
-    'save_model_interval': 50000,
     'episode_num_per_iteration': 2,
     'step_num': 4,
     'dynamic_epsilon': 0.1,

@@ -4,7 +4,10 @@ import time
 
 def add_train_arguments(parser):
     parser.add_argument('--iteration_num', type=int, default=0, help='iteration num')
+    parser.add_argument('--check_interval', type=int, default=500, help='check interval')
+    parser.add_argument('--save_model_interval', type=int, default=100000, help='save model interval')
     parser.add_argument('--device', choices=['cpu', 'cuda'], help='device')
+    parser.add_argument('--monitor_port', type=int, help='monitor port')
 
 def init_model(model, device):
     if device is not None:

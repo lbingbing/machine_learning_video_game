@@ -11,10 +11,10 @@ class GameWidget(QtWidgets.QWidget):
     def __init__(self, player_type):
         super().__init__()
 
-        self.init_state()
-        self.init_player(player_type)
+        self.state = self.create_state()
+        self.player = self.create_player(self.state, player_type)
 
-        self.init_gui_parameters()
+        self.unit_size = self.get_unit_size()
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setFixedSize(self.unit_size * (self.state.get_canvas_shape()[1] + 2), self.unit_size * (self.state.get_canvas_shape()[0] + 2))
         self.installEventFilter(self)
@@ -26,11 +26,8 @@ class GameWidget(QtWidgets.QWidget):
         
         self.reset()
 
-    def init_state(self):
+    def create_state(self):
         raise NotImplementedError()
-
-    def init_player(self, player_type):
-        self.player = self.create_player(self.state, player_type)
 
     def create_player(self, state, player_type):
         raise NotImplementedError()
@@ -38,100 +35,91 @@ class GameWidget(QtWidgets.QWidget):
     def is_human_player(self):
         return player.is_human(self.player)
 
-    def init_gui_parameters(self):
-        raise NotImplementedError()
-
-    def init_state_update_interval(self):
+    def get_unit_size(self):
         raise NotImplementedError()
 
     def init_state_update_timer(self):
-        self.init_state_update_interval()
-
-        self.state_update_requested = True
+        self.state_update_interval = self.get_state_update_interval()
 
         self.state_update_timer = QtCore.QTimer(self)
         self.state_update_timer.setInterval(self.state_update_interval * 1000)
         self.state_update_timer.setSingleShot(True)
         self.state_update_timer.timeout.connect(self.update_state)
 
+    def get_state_update_interval(self):
+        raise NotImplementedError()
+
     def stop_state_update(self):
         if self.state_update_timer.isActive():
             self.state_update_timer.stop()
 
     def init_get_action_worker(self):
-        self.computer_action_polling_interval = 0.05
+        self.action_polling_interval = 0.05
 
-        self.computer_action_requested = False
+        self.action_requested = False
 
-        self.request_queue = queue.Queue()
-        self.response_queue = queue.Queue()
-        self.worker_thread = threading.Thread(target=self.get_action_worker)
-        self.worker_thread.start()
+        self.get_action_request_queue = queue.Queue()
+        self.get_action_response_queue = queue.Queue()
+        self.get_action_worker_thread = threading.Thread(target=self.get_action_worker)
+        self.get_action_worker_thread.start()
 
-        self.get_action_timer = QtCore.QTimer(self)
-        self.get_action_timer.setInterval(self.computer_action_polling_interval * 1000)
-        self.get_action_timer.setSingleShot(True)
-        self.get_action_timer.timeout.connect(self.poll_computer_action)
+        self.poll_action_timer = QtCore.QTimer(self)
+        self.poll_action_timer.setInterval(self.action_polling_interval * 1000)
+        self.poll_action_timer.setSingleShot(True)
+        self.poll_action_timer.timeout.connect(self.poll_action)
 
     def get_action_worker(self):
         while True:
-            item = self.request_queue.get()
+            item = self.get_action_request_queue.get()
             if item is None:
                 break
             func, arg = item
             action = func(arg)
-            self.response_queue.put(action)
+            self.get_action_response_queue.put(action)
 
     def stop_get_action_worker(self):
-        self.request_queue.put(None)
-        self.worker_thread.join()
+        self.get_action_request_queue.put(None)
+        self.get_action_worker_thread.join()
 
-    def stop_compute_action_request(self):
-        if self.get_action_timer.isActive():
-            self.get_action_timer.stop()
-        if self.computer_action_requested:
-            self.response_queue.get()
-            self.computer_action_requested = False
+    def stop_action_request(self):
+        if self.poll_action_timer.isActive():
+            self.poll_action_timer.stop()
+        if self.action_requested:
+            self.get_action_response_queue.get()
+            self.action_requested = False
 
     def reset(self):
         self.stop_state_update()
-        self.stop_compute_action_request()
+        self.stop_action_request()
 
         self.state.reset()
-        self.actions = []
         self.update()
 
     def start(self):
         if self.is_human_player():
             self.schedule_state_update()
         else:
-            self.computer_step()
+            self.request_action()
 
     def schedule_state_update(self):
-        self.state_update_requested = True
         self.state_update_timer.start()
 
-    def computer_step(self):
-        self.request_computer_action()
+    def request_action(self):
+        self.get_action_request_queue.put((self.player.get_action, self.state))
+        self.action_requested = True
+        self.poll_action_timer.start()
 
-    def request_computer_action(self):
-        self.request_queue.put((self.player.get_action, self.state))
-        self.computer_action_requested = True
-        self.get_action_timer.start()
-
-    def poll_computer_action(self):
+    def poll_action(self):
         try:
-            item = self.response_queue.get(block=False)
-            self.computer_action_requested = False
+            item = self.get_action_response_queue.get(block=False)
+            self.action_requested = False
             action = item
             self.state.do_action(action)
-            self.actions.append(action)
             self.schedule_state_update()
         except queue.Empty:
-            self.get_action_timer.start()
+            self.poll_action_timer.start()
 
     def update_state(self):
-        self.state_update_requested = False
         self.state.update()
         self.update()
         if self.state.is_end():
@@ -141,7 +129,7 @@ class GameWidget(QtWidgets.QWidget):
             if self.is_human_player():
                 self.schedule_state_update()
             else:
-                self.computer_step()
+                self.request_action()
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
@@ -182,7 +170,7 @@ class GameWidget(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         self.stop_state_update()
-        self.stop_compute_action_request()
+        self.stop_action_request()
         self.stop_get_action_worker()
 
 def main(Widget):
