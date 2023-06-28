@@ -6,12 +6,13 @@ class Backbone(torch.nn.Module):
     def __init__(self, state_shape, action_dim):
         super().__init__()
 
-        channel_num = int((state_shape[2] * state_shape[3]) ** 0.5)
+        channel_num = ((int((state_shape[2] * state_shape[3]) ** 0.5) + 15) // 16) * 16
         self.layers = torch.nn.Sequential(
-            torch.nn.Conv2d(state_shape[1], channel_num, 5, padding=2),
-            torch_network.ConvResidualBlock(channel_num, 5),
-            torch_network.ConvResidualBlock(channel_num, 5),
-            torch_network.ConvResidualBlock(channel_num, 5),
+            torch.nn.Conv2d(state_shape[1], channel_num, 3, padding=1),
+            torch_network.ConvResidualBlock(channel_num, 3),
+            torch_network.ConvResidualBlock(channel_num, 3),
+            torch_network.ConvResidualBlock(channel_num, 3),
+            torch_network.ConvResidualBlock(channel_num, 3),
             torch.nn.Flatten(),
             )
 

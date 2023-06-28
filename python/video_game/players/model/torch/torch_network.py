@@ -83,16 +83,17 @@ class PVNetwork(torch.nn.Module):
         super().__init__()
 
         self.backbone = backbone
-        dim = get_output_dim(self.backbone, (2, *state_shape[1:])) // 2
+        dim1 = get_output_dim(self.backbone, (2, *state_shape[1:])) // 2
+        dim2 = ((int((state_shape[2] * state_shape[3] * action_dim) ** 0.5) + 15) // 16) * 16
         self.vhead = torch.nn.Sequential(
-            torch.nn.Linear(dim, dim),
+            torch.nn.Linear(dim1, dim2),
             torch.nn.ReLU(),
-            torch.nn.Linear(dim, 1),
+            torch.nn.Linear(dim2, 1),
             )
         self.phead = torch.nn.Sequential(
-            torch.nn.Linear(dim, dim),
+            torch.nn.Linear(dim1, dim2),
             torch.nn.ReLU(),
-            torch.nn.Linear(dim, action_dim),
+            torch.nn.Linear(dim2, action_dim),
             )
 
     def forward(self, x):
