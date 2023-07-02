@@ -3,17 +3,18 @@ import os
 import sys
 import logging
 import json
+import random
 import math
 import time
 
 def add_train_arguments(parser):
     parser.add_argument('--iteration_num', type=int, default=0, help='iteration num')
-    parser.add_argument('--check_interval', type=int, default=500, help='check interval')
+    parser.add_argument('--check_interval', type=int, default=1000, help='check interval')
     parser.add_argument('--save_model_interval', type=int, default=100000, help='save model interval')
     parser.add_argument('--device', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--monitor_port', type=int, help='monitor port')
 
-def init_model_log(model_path):
+def init_train_log(model_path):
     logging.basicConfig(format='%(message)s', level=logging.INFO, handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler('{}.log'.format(model_path))])
 
 def log(msg):
@@ -60,7 +61,7 @@ def try_update_train_configs(config_file, configs):
             new_configs = json.load(f)
     except json.decoder.JSONDecodeError:
         return False
-    log('train configs:')
+    log('update train configs:')
     for k in configs:
         if k in new_configs and new_configs[k] != configs[k]:
             log('{}: {} -> {}'.format(k, configs[k], new_configs[k]))
@@ -72,15 +73,14 @@ def try_update_train_configs(config_file, configs):
     configs.update(new_configs)
     return True
 
-def get_dynamic_learning_rate(iteration_id, dynamic_learning_rate):
-    if isinstance(dynamic_learning_rate, (int, float)):
-        return dynamic_learning_rate
+def get_exploring_starts(exploring_starts, smemory):
+    exploring_starts_ratio, exploring_starts_age = exploring_starts
+    is_exploring_starts = exploring_starts_ratio > 0 and random.random() < exploring_starts_ratio and smemory.has_age(exploring_starts_age)
+    if is_exploring_starts:
+        start_state = smemory.sample(exploring_starts_age).clone()
     else:
-        learning_rate_t_pairs = [[dynamic_learning_rate[0], 0]] + dynamic_learning_rate[1:]
-        for (learning_rate1, iteration_id1), (learning_rate2, iteration_id2) in zip(learning_rate_t_pairs[:-1], learning_rate_t_pairs[1:]):
-            if iteration_id1 <= iteration_id < iteration_id2:
-                return learning_rate1 * math.pow(learning_rate2 / learning_rate1, (iteration_id - iteration_id1) / (iteration_id2 - iteration_id1))
-        return learning_rate_t_pairs[-1][0]
+        start_state = None
+    return is_exploring_starts, start_state
 
 def get_dynamic_epsilon(t, dynamic_epsilon):
     if isinstance(dynamic_epsilon, (int, float)):
@@ -91,6 +91,16 @@ def get_dynamic_epsilon(t, dynamic_epsilon):
             if t1 <= t < t2:
                 return (epsilon2 - epsilon1) * (t - t1) / (t2 - t1) + epsilon1
         return epsilon_t_pairs[-1][0]
+
+def get_dynamic_learning_rate(iteration_id, dynamic_learning_rate):
+    if isinstance(dynamic_learning_rate, (int, float)):
+        return dynamic_learning_rate
+    else:
+        learning_rate_t_pairs = [[dynamic_learning_rate[0], 0]] + dynamic_learning_rate[1:]
+        for (learning_rate1, iteration_id1), (learning_rate2, iteration_id2) in zip(learning_rate_t_pairs[:-1], learning_rate_t_pairs[1:]):
+            if iteration_id1 <= iteration_id < iteration_id2:
+                return learning_rate1 * math.pow(learning_rate2 / learning_rate1, (iteration_id - iteration_id1) / (iteration_id2 - iteration_id1))
+        return learning_rate_t_pairs[-1][0]
 
 def get_current_time_str():
     return time.strftime('%Y-%m-%d %H:%M:%S')

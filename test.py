@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+import json
 
 os.chdir('machine_learning_video_game_release')
 
@@ -10,6 +11,15 @@ def run(cmd, timeout=None):
     print(' '.join(cmd))
     res = subprocess.run(cmd, timeout=timeout)
     return res.returncode == 0
+
+def create_train_configs_update_flag_file():
+    configs = {
+        'exploring_starts': [0.5, 0],
+        }
+    with open('flag.train_configs_update', 'w') as f:
+        json.dump(configs, f, indent=4)
+
+create_train_configs_update_flag_file()
 
 def test_gridwalk_game_regression_random():
     assert run(['python', '-m', 'video_game.games.gridwalk_game_regression', 'random', '100'])

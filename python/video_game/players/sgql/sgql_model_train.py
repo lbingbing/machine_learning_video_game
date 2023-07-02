@@ -3,27 +3,48 @@ import random
 import itertools
 
 from ..utils import train_utils
+from ..utils import state_memory
 from ..utils import replay_memory
 from ..utils import train_flags
 from ..utils import train_monitor
 
-def sample(state, model, rmemory, configs, monitor):
+def get_default_configs():
+    return {
+        'episode_num_per_iteration': 1,
+        'exploring_starts': [0, 0],
+        'state_memory_size': 4096,
+        'dynamic_epsilon': 0.1,
+        'discount': 0.99,
+        'replay_memory_size': 4096,
+        'batch_num_per_iteration': 1,
+        'batch_size': 32,
+        'dynamic_learning_rate': 0.001,
+        }
+
+def sample(state, model, smemory, rmemory, configs, monitor):
     model.set_training(False)
 
     episode_num_per_iteration = configs['episode_num_per_iteration']
+    exploring_starts = configs['exploring_starts']
     dynamic_epsilon = configs['dynamic_epsilon']
     discount = configs['discount']
 
+    smemory.resize(configs['state_memory_size'])
     rmemory.resize(configs['replay_memory_size'])
 
     scores = []
     ages = []
     for episode_id in range(episode_num_per_iteration):
-        state.reset()
+        is_exploring_starts, start_state = train_utils.get_exploring_starts(exploring_starts, smemory)
+        if is_exploring_starts:
+            state = start_state
+        else:
+            state.reset()
         if monitor:
             monitor.send_state(state.clone())
-        for t in itertools.count():
+        for t in itertools.count(state.get_age()):
             state1 = state.clone()
+            smemory.record(state1)
             epsilon = train_utils.get_dynamic_epsilon(t, dynamic_epsilon)
             if random.random() > epsilon:
                 action = model.get_action(state)
@@ -40,8 +61,9 @@ def sample(state, model, rmemory, configs, monitor):
                 monitor.send_state(state.clone())
             if is_end:
                 break
-        scores.append(state.get_score())
-        ages.append(state.get_age())
+        if not is_exploring_starts:
+            scores.append(state.get_score())
+            ages.append(state.get_age())
     return scores, ages
 
 def train(model, rmemory, configs, iteration_id):
@@ -63,7 +85,7 @@ def main(state, model, configs):
     train_utils.add_train_arguments(parser)
     args = parser.parse_args()
 
-    train_utils.init_model_log(model.get_model_path())
+    train_utils.init_train_log(model.get_model_path())
 
     train_utils.init_model(model, args.device)
 
@@ -71,6 +93,7 @@ def main(state, model, configs):
     start_iteration_id = training_context['start_iteration_id']
     configs = training_context['configs']
 
+    smemory = state_memory.StateMemory(configs['state_memory_size'])
     rmemory = replay_memory.ReplayMemory(configs['replay_memory_size'])
 
     losses = []
@@ -80,7 +103,7 @@ def main(state, model, configs):
         for iteration_id in itertools.count(1):
             if iteration_id % args.check_interval == 1:
                 train_flags.check_and_update_train_configs(model.get_model_path(), configs)
-            scores1, ages1 = sample(state, model, rmemory, configs, monitor)
+            scores1, ages1 = sample(state, model, smemory, rmemory, configs, monitor)
             losses1 = train(model, rmemory, configs, iteration_id)
             losses += losses1
             scores += scores1

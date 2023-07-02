@@ -5,14 +5,6 @@ from . import mcpgcb_model_train
 state = bombman_state.create_state()
 model = bombman_mcpgcb_torch_nn_player.create_model(state)
 
-configs = {
-    'episode_num_per_iteration': 2,
-    'discount': 0.99,
-    'replay_memory_size': 4096,
-    'batch_num_per_iteration': 2,
-    'batch_size': 32,
-    'dynamic_learning_rate': 0.001,
-    'vloss_factor': 1,
-    }
+configs = mcpgcb_model_train.get_default_configs()
 
 mcpgcb_model_train.main(state, model, configs)
