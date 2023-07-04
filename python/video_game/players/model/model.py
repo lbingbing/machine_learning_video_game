@@ -22,14 +22,17 @@ class Model:
     def get_model_algorithm(self):
         raise NotImplementedError()
 
-    def get_model_path(self):
+    def get_model_dir_path(self):
         return '{}_{}_{}_model'.format(self.game_name, self.get_model_algorithm(), self.get_model_structure())
+
+    def get_model_path(self):
+        return os.path.join(self.get_model_dir_path(), 'model')
 
     def exists(self):
         return os.path.isfile(self.get_model_path())
 
     def initialize(self):
-        raise NotImplementedError()
+        os.makedirs(self.get_model_dir_path(), exist_ok=True)
 
     def get_parameter_number(self):
         raise NotImplementedError()

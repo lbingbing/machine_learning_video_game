@@ -13,6 +13,7 @@ class TableModel(model.Model):
         raise NotImplementedError()
 
     def initialize(self):
+        super().initialize()
         self.table.initialize()
 
     def get_parameter_number(self):

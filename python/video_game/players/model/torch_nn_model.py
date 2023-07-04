@@ -21,6 +21,7 @@ class TorchNNModel(nn_model.NNModel):
         return 'torch'
 
     def initialize(self):
+        super().initialize()
         def init_parameters(m):
             if isinstance(m, torch.nn.Linear) or isinstance(m, torch.nn.Conv2d):
                 torch.nn.init.xavier_uniform_(m.weight)
